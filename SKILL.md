@@ -1,13 +1,13 @@
 ---
 name: xhs-essence-book
 description: 把小红书帖子（图文、正文、作者回复、评论区高含金量内容、图片里的文字）采集、精选、汇编成一本可读的精华小书 PDF。当用户提供小红书笔记链接/分享文案/xhslink 短链，说「做成小书」「摘录成册」「整理成精华册」「把这条帖子做成 PDF」「评论区也收进去」时使用。支持多篇同主题合集、小红书风格排版、逐字照录与图版文字转录。
-version: 1.0.0
+version: 1.1.0
 ---
 
 # 小红书精华小书
 
-一条链接进，一本小书出：**采集 → 读图 → 精选 → 成稿 → 排版 → 验收**。
-本技能自带采集器、排版引擎与验收脚本，不依赖第三方付费接口、不需要登录。
+一条链接进，一本小书出：**采集 → 读图 → 精选 → 成稿 → 排版 → 验收 → 归档**。
+本技能自带采集器、排版引擎、验收脚本与书架归档管理，不依赖第三方付费接口、不需要登录。
 
 ## 何时用
 
@@ -30,7 +30,7 @@ python scripts/build_book.py --help          # 缺依赖会直接报出来
 python -c "import reportlab, pymupdf; print('ok')"
 ```
 
-## 六步流程
+## 七步流程
 
 ### 1 采集
 
@@ -93,6 +93,33 @@ python scripts/verify_book.py --pdf note/书名.pdf --source note/book_source.tx
 必须全 PASS：无 `@@`/`**`/`==` 残留、无行首中文标点、引文与采集原文逐字一致、图版文字已落页、无「公版古籍」错误文案、目录书签齐全。
 最后用 `ViewImage` 看 2–3 张抽样页，确认板块层级、卡片不跨页、插图不裁切。
 
+### 7 归档（成书后必做）
+
+```bash
+# 查重：这条笔记是否已经做过书
+python scripts/shelf.py check "<笔记链接或ID>"
+# 归档：自动收 PDF、书稿、采集数据、图片、验收报告进书架，并更新 INDEX.md
+python scripts/shelf.py archive <成书工作目录> --title "书名" --author "原作者" \
+  --note-id "<笔记链接或ID>" --tags "标签,逗号分隔" --brief "一句话简介" \
+  --pdf 成品.pdf --source book_source.txt --data note_data.json --verify 验收日志
+python scripts/shelf.py list      # 查看书架
+```
+
+书架根目录默认 `C:\Users\无相道一\WorkBuddy\xhs-library\`（`--root` 可改）：
+
+```
+xhs-library/
+├── INDEX.md      总目录：每本书一行（日期｜书名｜原作者｜标签｜笔记ID｜简介｜位置）
+├── skill/        本技能包
+└── books/        每本书一个文件夹：日期_书名_作者，全套归档
+    └── 2026-11-14_xxx/
+        ├── 书名.pdf、book_source.txt、note_data.json、comments.md
+        ├── images/、样张/、verify_report.txt、note.meta.md（归档卡片）
+```
+
+- 同一笔记再次 archive 会被拦下并提示旧档位置；要重制加 `--v2`（旧版保留，新目录带 _v2）。
+- **`books/` 与 `INDEX.md` 只在本地，不随 git 公开**——书的内容含他人原创，公开仓库只放 skill 工具本身。
+
 ## 书稿标记速查
 
 `@@LEAD` 核心观点卡 · `@@H2` 小节 · `@@KEY` 金句 · `@@POINT` 分点 · `@@NOTE` 编者注（自动加「编者注｜」）·
@@ -107,6 +134,8 @@ python scripts/verify_book.py --pdf note/书名.pdf --source note/book_source.tx
 4. **署名三要素**：谁说的、多少赞、什么关系（一级评论 / 回复谁 / 作者本人）。
 5. **版权口径**：当代内容一律 `xhs` 或 `modern`；书写明「著作权归原作者及评论作者所有，仅供个人阅读存档，请勿传播或商用」。
 6. **不编数据**：拿不到的发布时间、互动数、图片一律留白并说明，不推测、不补写。
+7. **每本书必须归档**：验收通过后 `shelf.py archive` 进书架并更新 INDEX.md；`books/` 与 `INDEX.md` 不进 git。
+8. **查重在先**：动手成书前先 `shelf.py check`，已归档的提示旧档位置，重制才用 `--v2`。
 
 ## 目录
 
@@ -118,5 +147,6 @@ xhs-essence-book/
 ├── templates/book_source_template.txt
 ├── scripts/collect_note.py       采集（SSR 解析 + 图片落地 + 评论导出）
 ├── scripts/build_book.py         排版（默认 --preset xhs）
-└── scripts/verify_book.py        验收（残留、引文、标点、版权、抽样页）
+├── scripts/verify_book.py        验收（残留、引文、标点、版权、抽样页）
+└── scripts/shelf.py              书架归档（init/archive/list/check）
 ```
