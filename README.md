@@ -42,7 +42,36 @@ python scripts/build_book.py --source note/book_source.txt --title "书名" \
 # 4. 验收
 python scripts/verify_book.py --pdf note/书名.pdf --source note/book_source.txt \
   --data note/note_data.json --render note/抽样页
+
+# 5. 查重 + 归档进书架
+python scripts/shelf.py check "<笔记链接或ID>"
+python scripts/shelf.py archive note/ --title "书名" --author "原作者" \
+  --note-id "<笔记链接或ID>" --tags "标签" --brief "一句话简介" \
+  --pdf 书名.pdf --source book_source.txt --data note_data.json
 ```
+
+## 书架归档体系
+
+成书不是终点。每本验收通过的书都归档进书架（默认 `C:\Users\无相道一\WorkBuddy\xhs-library\`）：
+
+```
+xhs-library/                    整体一个包 = 一个 git 仓库
+├── INDEX.md                    总目录：每本书一行（日期｜书名｜原作者｜标签｜笔记ID｜简介｜位置）
+├── skill/                      本技能包（随 git 公开）
+└── books/                      每本书一个文件夹（只在本地，不进 git）
+    └── 2026-11-14_书名_作者/
+        ├── 书名.pdf            成品
+        ├── book_source.txt     书稿（含 @@ 标记的纯文本，可重排）
+        ├── note_data.json      采集数据（引文逐字比对的依据）
+        ├── comments.md         评论人读版
+        ├── images/ 样张/       原帖图 / 成书样张
+        ├── verify_report.txt   验收日志
+        └── note.meta.md        归档卡片（书名、原作者、笔记ID、原帖地址、标签、版本）
+```
+
+- **命名**：`日期_书名_原作者`，自动清理 Windows 非法字符与 emoji
+- **查重**：按笔记 ID；同笔记再次归档会被拦下并提示旧档位置，重制加 `--v2`（旧版保留）
+- **版权**：`books/` 与 `INDEX.md` 已在 `.gitignore` 里排除——书的内容含他人原创，公开仓库只放工具本身
 
 ## 版式
 
@@ -61,6 +90,7 @@ templates/book_source_template.txt  书稿骨架
 scripts/collect_note.py         采集
 scripts/build_book.py           排版
 scripts/verify_book.py          验收
+scripts/shelf.py                书架归档（init/archive/list/check）
 ```
 
 引擎来自 [ebook-pdf-maker](../ebook-pdf-maker)，本仓库在其基础上用到并依赖这些能力：`--preset xhs`、`@@PIC` 图版文字板块、中文标点禁则、分页保护。
